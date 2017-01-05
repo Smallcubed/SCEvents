@@ -39,6 +39,9 @@
 
 @class SCEvent;
 
+
+typedef void (^SCEventBlock)(SCEvents *pathWatcher, SCEvent *anEvent);
+
 /**
  * @class SCEvents SCEvents.h
  *
@@ -95,6 +98,8 @@
 - (BOOL)startWatchingPaths:(NSArray *)paths onRunLoop:(NSRunLoop *)runLoop;
 
 - (BOOL)stopWatchingPaths;
+
+- (BOOL)startWatchingPath:(NSString *)path withBlock:(SCEventBlock)aBlock;
 
 - (NSString *)streamDescription;
 

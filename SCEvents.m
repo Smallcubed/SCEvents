@@ -52,6 +52,9 @@ static void _events_callback(ConstFSEventStreamRef streamRef,
 							 void *eventPaths, 
 							 const FSEventStreamEventFlags eventFlags[], 
 							 const FSEventStreamEventId eventIds[]);
+
+@property (strong) SCEventBlock blockHandler;
+
 @end
 
 @implementation SCEvents
@@ -130,6 +133,20 @@ static void _events_callback(ConstFSEventStreamRef streamRef,
 - (BOOL)startWatchingPaths:(NSArray *)paths
 {
     return [self startWatchingPaths:paths onRunLoop:[NSRunLoop currentRunLoop]];
+}
+
+/**
+ * Starts watching the supplied array of paths for events on the current run loop.
+ *
+ * @param path A path to watch
+ * @param aBlock A block to call for when the path changes.
+ *
+ * @return A BOOL indicating the success or failure
+ */
+- (BOOL)startWatchingPath:(NSString *)path withBlock:(SCEventBlock)aBlock {
+	self.blockHandler = aBlock;
+	[self stopWatchingPaths];
+	return [self startWatchingPaths:@[path] onRunLoop:[NSRunLoop currentRunLoop]];
 }
 
 /**
@@ -230,6 +247,7 @@ static void _events_callback(ConstFSEventStreamRef streamRef,
 {
 	// Stop the event stream if it's still running
 	if (_isWatchingPaths) [self stopWatchingPaths];
+	self.blockHandler = nil;
 }
 
 #pragma mark -
@@ -333,8 +351,14 @@ static void _events_callback(ConstFSEventStreamRef streamRef,
             eventPath = [eventPath stringByStandardizingPath];
             
             SCEvent *event = [SCEvent eventWithEventId:(NSUInteger)eventIds[i] eventDate:[NSDate date] eventPath:eventPath eventFlags:(SCEventFlags)eventFlags[i]];
-            [[pathWatcher delegate] pathWatcher:pathWatcher eventOccurred:event];
-            
+			
+			if (pathWatcher.blockHandler) {
+				pathWatcher.blockHandler(pathWatcher, event);
+			}
+			else {
+				[[pathWatcher delegate] pathWatcher:pathWatcher eventOccurred:event];
+			}
+			
             if (i == (numEvents - 1)) {
                 [pathWatcher setLastEvent:event];
             }
