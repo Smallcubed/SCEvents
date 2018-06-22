@@ -102,7 +102,7 @@ static void _events_callback(ConstFSEventStreamRef streamRef,
     
     dispatch_sync(_eventsQueue,
     ^{
-        FSEventStreamFlushSync(_eventStream);        
+		FSEventStreamFlushSync(self->_eventStream);        
     });
     
 	return YES;
@@ -118,7 +118,7 @@ static void _events_callback(ConstFSEventStreamRef streamRef,
 {
     if (!_isWatchingPaths) { return NO; }
     
-    dispatch_sync(_eventsQueue, ^{ FSEventStreamFlushAsync(_eventStream); });
+	dispatch_sync(_eventsQueue, ^{ FSEventStreamFlushAsync(self->_eventStream); });
 	
     return YES;
 }
@@ -166,19 +166,19 @@ static void _events_callback(ConstFSEventStreamRef streamRef,
     
     dispatch_sync(_eventsQueue,
     ^{
-        _runLoop = [runLoop getCFRunLoop];
+		self->_runLoop = [runLoop getCFRunLoop];
         
         [self setWatchedPaths:paths];
         
-        _eventStream = _create_events_stream(self, ((__bridge CFArrayRef)_watchedPaths), _notificationLatency, _resumeFromEventId);
+		self->_eventStream = _create_events_stream(self, ((__bridge CFArrayRef)self->_watchedPaths), self->_notificationLatency, self->_resumeFromEventId);
         
         // Schedule the event stream on the supplied run loop
-        FSEventStreamScheduleWithRunLoop(_eventStream, _runLoop, kCFRunLoopDefaultMode);
+		FSEventStreamScheduleWithRunLoop(self->_eventStream, self->_runLoop, kCFRunLoopDefaultMode);
         
         // Start the event stream
-        FSEventStreamStart(_eventStream);
+		FSEventStreamStart(self->_eventStream);
         
-        _isWatchingPaths = YES;        
+		self->_isWatchingPaths = YES;        
     });
 	
     return YES;
@@ -197,18 +197,18 @@ static void _events_callback(ConstFSEventStreamRef streamRef,
     
     dispatch_sync(_eventsQueue, 
     ^{
-        FSEventStreamStop(_eventStream);
+		FSEventStreamStop(self->_eventStream);
         
-        if (_runLoop) FSEventStreamUnscheduleFromRunLoop(_eventStream, _runLoop, kCFRunLoopDefaultMode);
+		if (self->_runLoop) FSEventStreamUnscheduleFromRunLoop(self->_eventStream, self->_runLoop, kCFRunLoopDefaultMode);
         
-        FSEventStreamInvalidate(_eventStream);
+		FSEventStreamInvalidate(self->_eventStream);
         
-		if (_eventStream) {
-			FSEventStreamRelease(_eventStream);
-			_eventStream = NULL;
+		if (self->_eventStream) {
+			FSEventStreamRelease(self->_eventStream);
+			self->_eventStream = NULL;
 		}
         
-        _isWatchingPaths = NO;    
+		self->_isWatchingPaths = NO;    
     });
 	    
     return YES;
@@ -224,7 +224,7 @@ static void _events_callback(ConstFSEventStreamRef streamRef,
 	__block NSString *description = nil;
     dispatch_sync(_eventsQueue,
     ^{
-        description = (_isWatchingPaths) ? (__bridge_transfer NSString *)FSEventStreamCopyDescription(_eventStream) : nil;
+		description = (self->_isWatchingPaths) ? (__bridge_transfer NSString *)FSEventStreamCopyDescription(self->_eventStream) : nil;
     });
 	
 	return description;
